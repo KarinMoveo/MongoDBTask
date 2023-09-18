@@ -4,61 +4,65 @@ const mongoose_1 = require("mongoose");
 const solarSystem_1 = require("./models/solarSystem");
 const planet_1 = require("./models/planet");
 const visitor_1 = require("./models/visitor");
-const MONGODB_URI = 'mongodb://localhost:27017/mongoDBExerciseDB';
-mongoose_1.default.connect(MONGODB_URI)
+const MONGODB_URI = "mongodb://localhost:27017/mongoDBExerciseDB";
+mongoose_1.default
+    .connect(MONGODB_URI)
     .then(() => {
-    console.log('Connected to MongoDB');
+    console.log("Connected to MongoDB");
     // createData();
 })
     .catch((err) => {
-    console.error('Error connecting to MongoDB:', err);
+    console.error("Error connecting to MongoDB:", err);
 });
 function createData() {
     // Create a Solar System
     const solarSystemData = {
         planets: [],
-        starName: 'Sun System',
+        starName: "Sun System",
     };
     const solarSystem = new solarSystem_1.default(solarSystemData);
     // Create a Planet
     const planetData = {
-        name: 'Earth',
+        name: "Earth",
         system: solarSystem,
         visitors: [],
     };
     const planet = new planet_1.default(planetData);
     // Create a Visitor
     const visitorData = {
-        name: 'John Doe',
+        name: "John Doe",
         homePlanet: planet,
         visitedPlanets: [],
     };
     const visitor = new visitor_1.default(visitorData);
     // Save the objects to the database
-    solarSystem.save()
+    solarSystem
+        .save()
         .then(() => {
-        planet.save()
+        planet
+            .save()
             .then(() => {
-            visitor.save()
+            visitor
+                .save()
                 .then(() => {
-                console.log('Data saved to the database');
+                console.log("Data saved to the database");
             })
                 .catch((visitorErr) => {
-                console.error('Error saving visitor:', visitorErr);
+                console.error("Error saving visitor:", visitorErr);
             });
         })
             .catch((planetErr) => {
-            console.error('Error saving planet:', planetErr);
+            console.error("Error saving planet:", planetErr);
         });
     })
         .catch((solarSystemErr) => {
-        console.error('Error saving solar system:', solarSystemErr);
+        console.error("Error saving solar system:", solarSystemErr);
     });
 }
 async function findVisitor() {
-    const visitorName = 'John Doe';
+    const visitorName = "John Doe";
     try {
-        const visitor = await visitor_1.default.findOne({ name: visitorName }).populate('visitedPlanets').exec();
+        const visitor = await visitor_1.default.findOne({ name: visitorName }).populate("visitedPlanets").exec();
         if (visitor) {
             // Access the list of visited planets for the visitor
             const visitedPlanets = visitor.visitedPlanets;
@@ -81,9 +85,9 @@ async function findVisitor() {
     }
 }
 async function findAllVisitorsOnPlanet() {
-    const planetName = 'Earth';
+    const planetName = "Earth";
     try {
-        const visitors = await planet_1.default.findOne({ name: planetName }).populate('visitors').exec();
+        const visitors = await planet_1.default.findOne({ name: planetName }).populate("visitors").exec();
         if (visitors) {
             // Access the list of visited planets for the visitor
             const visitorsOnPlanet = visitors.visitors;
@@ -105,5 +109,102 @@ async function findAllVisitorsOnPlanet() {
         console.error(err);
     }
 }
+async function findAllVisitorsInSystem() {
+    const solarSystemName = "Sun System";
+    try {
+        const solarSystem = await solarSystem_1.default.findOne({ starName: solarSystemName })
+            .populate({
+            path: "planets",
+            populate: {
+                path: "visitors",
+            },
+        })
+            .exec();
+        if (!solarSystem) {
+            console.log(`Solar system ${solarSystemName} not found.`);
+        }
+        else {
+            const allVisitors = [];
+            solarSystem.planets.forEach((planet) => {
+                // planet.visitors.forEach((visitor) => {
+                // 	allVisitors.push({
+                // 		_id: visitor._id,
+                // 		name: visitor.name,
+                // 		homePlanet: planet.id,
+                // 	});
+                // });
+            });
+            if (allVisitors.length === 0) {
+                console.log(`No visitors found in ${solarSystemName}.`);
+            }
+            else {
+                console.log(`Visitors in ${solarSystemName}:`);
+                allVisitors.forEach((visitor) => {
+                    console.log(`Visitor ID: ${visitor._id}, Name: ${visitor.name}, Home Planet: ${visitor.homePlanet}`);
+                });
+            }
+        }
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
+// async function getStarNameOfVisitorHomePlanetSystem(visitorId : string) {
+//   try {
+//     // Find the visitor by ID and populate their homePlanet field
+//     const visitor = await Visitor.findById(visitorId).populate('homePlanet');
+//     if (!visitor) {
+//       console.log('Visitor not found.');
+//       return;
+//     }
+//     const homePlanet = visitor.homePlanet;
+//     if (!homePlanet) {
+//       console.log('Visitor does not have a home planet.');
+//       return;
+//     }
+//     await homePlanet.populate('system').execPopulate();
+//     const system = homePlanet.id;
+//     if (!system) {
+//       console.log('Home planet does not belong to a system.');
+//       return;
+//     }
+//     const starName = system.starName;
+//     console.log(`The star in the system of ${visitor.name}'s home planet is ${starName}.`);
+//   } catch (err) {
+//     console.error(err);
+//   }
+// }
+async function getPlanetInfo(planetName) {
+    try {
+        const planet = await planet_1.default.findOne({ name: planetName })
+            .populate('system')
+            .populate('visitors')
+            .exec();
+        if (!planet) {
+            console.log(`Planet ${planetName} not found.`);
+            return;
+        }
+        const system = planet.system;
+        const starName = system.id;
+        const visitors = planet.visitors;
+        console.log(`Planet: ${planetName}`);
+        console.log(`System's Star Name: ${starName}`);
+        if (visitors.length === 0) {
+            console.log('No visitors found on this planet.');
+        }
+        else {
+            console.log('Visitors:');
+            visitors.forEach((visitor) => {
+                console.log(`Visitor ID: ${visitor._id}`);
+            });
+        }
+    }
+    catch (err) {
+        console.error(err);
+    }
+}
 findVisitor();
 findAllVisitorsOnPlanet();
+findAllVisitorsOnPlanet();
+// getStarNameOfVisitorHomePlanetSystem('650827f002bc6a35deb90a10');
+getPlanetInfo('Earth');

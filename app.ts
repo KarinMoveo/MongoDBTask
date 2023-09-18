@@ -121,7 +121,7 @@ async function findAllVisitorsOnPlanet() {
 }
 
 async function findAllVisitorsInSystem() {
-	const solarSystemName = "Sun System"; 
+	const solarSystemName = "Sun System";
 
 	try {
 		const solarSystem = await SolarSystem.findOne({ starName: solarSystemName })
@@ -139,7 +139,13 @@ async function findAllVisitorsInSystem() {
 			const allVisitors = [];
 
 			solarSystem.planets.forEach((planet) => {
-        console.log(planet);
+				// planet.visitors.forEach((visitor) => {
+				// 	allVisitors.push({
+				// 		_id: visitor._id,
+				// 		name: visitor.name,
+				// 		homePlanet: planet.id,
+				// 	});
+				// });
 			});
 
 			if (allVisitors.length === 0) {
@@ -158,6 +164,73 @@ async function findAllVisitorsInSystem() {
 	}
 }
 
+// async function getStarNameOfVisitorHomePlanetSystem(visitorId : string) {
+//   try {
+//     // Find the visitor by ID and populate their homePlanet field
+//     const visitor = await Visitor.findById(visitorId).populate('homePlanet');
+
+//     if (!visitor) {
+//       console.log('Visitor not found.');
+//       return;
+//     }
+
+//     const homePlanet = visitor.homePlanet;
+
+//     if (!homePlanet) {
+//       console.log('Visitor does not have a home planet.');
+//       return;
+//     }
+
+//     await homePlanet.populate('system').execPopulate();
+
+//     const system = homePlanet.id;
+
+//     if (!system) {
+//       console.log('Home planet does not belong to a system.');
+//       return;
+//     }
+
+//     const starName = system.starName;
+//     console.log(`The star in the system of ${visitor.name}'s home planet is ${starName}.`);
+//   } catch (err) {
+//     console.error(err);
+//   }
+// }
+
+async function getPlanetInfo(planetName : string) {
+  try {
+    const planet = await Planet.findOne({ name: planetName })
+      .populate('system')
+      .populate('visitors')
+      .exec();
+
+    if (!planet) {
+      console.log(`Planet ${planetName} not found.`);
+      return;
+    }
+
+    const system = planet.system;
+    const starName = planet.name;
+    const visitors = planet.visitors;
+
+    console.log(`Planet: ${planetName}`);
+    console.log(`System's Star Name: ${starName}`);
+
+    if (visitors.length === 0) {
+      console.log('No visitors found on this planet.');
+    } else {
+      console.log('Visitors:');
+      visitors.forEach((visitor) => {
+        console.log(`Visitor ID: ${visitor._id}`);
+      });
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 findVisitor();
 findAllVisitorsOnPlanet();
 findAllVisitorsOnPlanet();
+// getStarNameOfVisitorHomePlanetSystem('650827f002bc6a35deb90a10');
+getPlanetInfo('Earth');
